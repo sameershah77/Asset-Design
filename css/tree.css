@@ -1,0 +1,225 @@
+/* tree.css - Modern tree view styling with circular node icons */
+
+/* CSS Variables for theming */
+:root {
+  /* Light Theme (default) */
+  --bg-color: #f5f7fa;
+  --card-bg: #ffffff;
+  --text: #333333;
+  --text-secondary: #666666;
+  --primary: #2196f3;
+  --primary-light: #e3f2fd;
+  --border: #e0e0e0;
+  --shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --hover-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --transition: all 0.2s ease;
+}
+
+/* Dark Theme */
+body.dark-theme {
+  --bg-color: #121212;
+  --card-bg: #1e1e1e;
+  --text: #e0e0e0;
+  --text-secondary: #aaaaaa;
+  --primary: #42a5f5;
+  --primary-light: #0d47a1;
+  --border: #333333;
+  --shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  --hover-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* General body styling */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text);
+  margin: 0;
+  padding: 0; /* Avoid global padding that shifts sidebar; spacing handled by dashboard.css */
+  transition: var(--transition);
+}
+
+/* Theme toggler */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  z-index: 100;
+}
+
+.theme-toggle:hover {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+/* Tree container card */
+#assetTree {
+  max-width: 700px;
+  background-color: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 25px;
+  box-shadow: var(--shadow);
+  margin: auto;
+  transition: var(--transition);
+}
+
+#assetTree:hover {
+  box-shadow: var(--hover-shadow);
+}
+
+/* Page header */
+h2 {
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 30px;
+  font-weight: 500;
+}
+
+/* jsTree container */
+.jstree-default {
+  background: transparent !important;
+}
+
+/* jsTree nodes */
+.jstree-default .jstree-node {
+  margin-left: 24px;
+  padding: 5px 0;
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAACAQMAAAB49I5GAAAABlBMVEUAAAAAAAClZ7nPAAAAAnRSTlMAGovxNEIAAAAdSURBVAjXY2CAAZlgGpUYRoUgygWEYFCJ4VQIAE5PAYHeOFN0AAAAAElFTkSuQmCC') !important;
+  background-repeat: repeat-y !important;
+  background-position: -13px 0 !important;
+}
+
+.jstree-default .jstree-anchor {
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  line-height: 1.5;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Node row enhancements */
+.jstree-default .jstree-anchor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+/* Simple transparent child count badge */
+.jstree-default .jstree-anchor::after {
+  content: attr(data-count);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  font-size: 11px;
+  font-weight: normal;
+  line-height: 1;
+  border-radius: 10px;
+  background: rgba(33, 150, 243, 0.15);
+  color: var(--primary);
+  padding: 0 5px;
+  margin-left: 8px;
+  border: 1px solid rgba(33, 150, 243, 0.25);
+}
+
+/* Hide badge when zero children */
+.jstree-default .jstree-anchor[data-count="0"]::after {
+  content: '';
+  display: none;
+}
+
+/* Optional: subtle separator between rows */
+.jstree-default .jstree-node > .jstree-wholerow {
+  box-shadow: inset 0 -1px rgba(0,0,0,0.06);
+}
+
+.jstree-default .jstree-hovered {
+  background-color: rgba(33, 150, 243, 0.08);
+  box-shadow: none;
+}
+
+.jstree-default .jstree-clicked {
+  background-color: rgba(33, 150, 243, 0.15) !important;
+  color: var(--text) !important;
+  font-weight: normal;
+  box-shadow: none !important;
+}
+
+.jstree-default .jstree-icon {
+  color: var(--primary);
+}
+
+/* Simple transparent circular node icons */
+.jstree-default .jstree-icon.jstree-themeicon {
+  background-color: rgba(33, 150, 243, 0.2); /* Light blue transparent */
+  background-image: none !important;
+  border-radius: 50%;
+  width: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  margin-right: 10px;
+  transition: all 0.2s ease;
+  box-shadow: none;
+  border: 1px solid rgba(33, 150, 243, 0.4);
+}
+
+/* Simple hover effect for circular node icons */
+.jstree-default .jstree-anchor:hover .jstree-themeicon {
+  background-color: rgba(33, 150, 243, 0.3); /* Slightly darker on hover */
+  transform: scale(1.1);
+}
+
+/* Custom folder node styling */
+.jstree-default .jstree-closed > .jstree-ocl {
+  background-position: -4px -4px;
+  color: var(--primary);
+}
+
+.jstree-default .jstree-open > .jstree-ocl {
+  background-position: -36px -4px;
+  color: var(--primary);
+}
+
+/* Context menu styling */
+.vakata-context {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.vakata-context li > a {
+  color: var(--text) !important;
+  padding: 8px 16px !important;
+  transition: var(--transition);
+}
+
+.vakata-context li > a:hover {
+  background-color: var(--primary-light) !important;
+  box-shadow: none !important;
+}
+
+/* Subtle fade animation for node selection */
+@keyframes subtle-fade {
+  0% { background-color: rgba(33, 150, 243, 0.25); }
+  100% { background-color: rgba(33, 150, 243, 0.15); }
+}
+
+.jstree-default .jstree-clicked {
+  animation: subtle-fade 0.5s ease-out forwards;
+}

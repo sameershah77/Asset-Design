@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Log in — Asset Hierarchy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/auth.css" />
+  <style>
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--surface);
+      color: var(--on-surface);
+      border: 1px solid rgba(128,128,128,0.15);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+    }
+    .theme-toggle:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle">Toggle Dark Mode</button>
+  <main class="auth-page">
+    <div class="card">
+      <div class="brand">
+        <div class="logo-mark">MS</div>
+        <div class="brand-title">Asset Hierarchy</div>
+      </div>
+      <h1>Welcome back</h1>
+      <p class="muted">Sign in to continue to your dashboard.</p>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input id="login-email" name="email" type="email" autocomplete="username" required />
+          <div class="error" aria-live="polite"></div>
+        </div>
+
+        <div class="field">
+          <label for="login-password">Password</label>
+          <div class="pw-row">
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+            <button type="button" id="togglePwLogin" class="link-btn" aria-label="Toggle password">Show</button>
+          </div>
+          <div class="error" aria-live="polite"></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" type="submit">Log in</button>
+          <a class="link muted" href="signup.html">Create account</a>
+        </div>
+
+        <div id="status" class="status" aria-live="polite"></div>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/ui-auth.js" defer></script>
+  <script>
+    // Check if user is already logged in
+    document.addEventListener('DOMContentLoaded', function() {
+      const token = localStorage.getItem('accessToken');
+      const userData = localStorage.getItem('userData');
+      
+      if (token && userData) {
+        window.location.href = 'dashboard.html';
+      }
+    });
+    
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('themeToggle');
+    
+    // Check for saved theme preference or default to light
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    if (currentTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      themeToggle.textContent = 'Toggle Light Mode';
+    }
+    
+    // Toggle theme on button click
+    themeToggle.addEventListener('click', () => {
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      
+      if (isDarkMode) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+        themeToggle.textContent = 'Toggle Dark Mode';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.textContent = 'Toggle Light Mode';
+      }
+    });
+  </script>
+</body>
+</html>

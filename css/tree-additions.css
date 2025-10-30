@@ -1,0 +1,102 @@
+/* Additional modern styling for the asset tree */
+
+/* Simple consistent styling for all nodes */
+.jstree-default .asset-level-1 > .jstree-themeicon,
+.jstree-default .asset-level-2 > .jstree-themeicon,
+.jstree-default .asset-level-3 > .jstree-themeicon,
+.jstree-default .asset-level-4 > .jstree-themeicon,
+.jstree-default .asset-level-5 > .jstree-themeicon,
+.jstree-default .asset-level-6 > .jstree-themeicon {
+  background-color: rgba(33, 150, 243, 0.2) !important; /* Light blue transparent for all levels */
+  border: 1px solid rgba(33, 150, 243, 0.4);
+}
+
+/* Improve the spacing for tree nodes */
+.jstree-default .jstree-node {
+  margin-left: 22px;
+  padding: 3px 0;
+}
+
+/* Remove horizontal background and improve node highlighting */
+.jstree-default .jstree-wholerow {
+  display: none !important; /* Remove the horizontal background completely */
+}
+
+.jstree-default .jstree-clicked {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.jstree-default .jstree-hovered {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Highlight just the node text on hover/selection */
+.jstree-default .jstree-clicked > .jstree-anchor {
+  color: var(--primary) !important;
+  font-weight: 500;
+}
+
+.jstree-default .jstree-hovered > .jstree-anchor {
+  color: var(--primary) !important;
+}
+
+/* Improve context menu styling */
+.vakata-context {
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
+  overflow: hidden !important;
+}
+
+.vakata-context li > a {
+  padding: 12px 20px !important;
+  font-size: 15px !important;
+}
+
+.vakata-context li > a:hover {
+  background-color: var(--primary) !important;
+  color: rgb(0, 0, 0) !important;
+}
+
+/* Improve connector lines */
+.jstree-default .jstree-anchor {
+  position: relative;
+}
+
+/* Make tree compact but still readable */
+#assetTree .jstree-container-ul {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* Improved icons for expand/collapse */
+.jstree-default .jstree-closed > .jstree-ocl,
+.jstree-default .jstree-open > .jstree-ocl {
+  width: 24px;
+  height: 24px;
+  background-size: 300px 150px;
+}
+
+/* Add slight highlight effect on the node row */
+.jstree-default .jstree-wholerow {
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Badge styling for displaying deeper hierarchy at a glance */
+.jstree-default .jstree-node[aria-level="1"] > .jstree-anchor::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #5c6bc0;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  display: none; /* Hidden by default, use if needed */
+}
+
+/* Override jstree dots or vertical lines if needed */
+.jstree-default:not(.jstree-dots):not(.jstree-no-dots) .jstree-node {
+  background-position: -8px 0;
+}

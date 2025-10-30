@@ -1,0 +1,108 @@
+/* Enhanced Tree Connector Lines */
+/* Theme-aware connector lines for the asset tree structure */
+
+/* Make standard tree lines visible and theme-appropriate */
+:root {
+  --line-color: rgba(0, 0, 0, 0.3); /* Light theme: semi-transparent black */
+}
+
+[data-theme="dark"] {
+  --line-color: rgba(255, 255, 255, 0.3); /* Dark theme: semi-transparent white */
+}
+
+/* Default connector lines */
+.jstree-default .jstree-node {
+  position: relative;
+}
+
+/* Create vertical lines using pseudo-elements for better control */
+.jstree-default .jstree-node::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: -5px;
+  bottom: 12px;
+  width: 1px;
+  background-color: var(--line-color);
+}
+
+/* Create horizontal connector lines */
+.jstree-default .jstree-anchor::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  width: 12px;
+  height: 1px;
+  background-color: var(--line-color);
+}
+
+/* Remove background image since we're using our own lines */
+.jstree-default .jstree-node {
+  background-image: none;
+}
+
+/* Enhanced line visibility */
+.jstree-default .jstree-icon.jstree-ocl {
+  background-color: transparent;
+  border-radius: 0;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* Last node line */
+.jstree-default .jstree-last {
+  background: transparent;
+}
+
+.jstree-default .jstree-leaf > .jstree-ocl {
+  background-position: -68px -4px;
+}
+
+/* Ensure lines are drawn correctly */
+.jstree-default > .jstree-container-ul > .jstree-node {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Make lines more visible in both themes */
+[data-theme="dark"] .jstree-default .jstree-node {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAACAQMAAAB49I5GAAAABlBMVEUAAACZmZl+9SAkAAAAAnRSTlMAGovxNEIAAAAdSURBVAjXY2CAAZlgGpUYRoUgygWEYFCJ4VQIAE5PAYHeOFN0AAAAAElFTkSuQmCC');
+}
+
+/* Fix for when the line overlaps with node circles */
+.jstree-default .jstree-node {
+  position: relative;
+  background-position: -7px 0 !important; /* Adjust position for larger nodes */
+}
+
+.jstree-default .jstree-anchor {
+  position: relative;
+  z-index: 1; /* Make sure nodes appear above the lines */
+}
+
+/* Adjust lines for larger node circles */
+.jstree-default .jstree-ocl {
+  width: 30px !important; /* Match larger circle size */
+  height: 30px !important;
+  margin-top: 0;
+  background-position: -39px -3px !important;
+}
+
+/* Adjust spacing for better line visibility */
+.jstree-default .jstree-container-ul > .jstree-node {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+/* Enhance clickable area */
+.jstree-default .jstree-wholerow {
+  height: 36px;
+}
+
+/* Position adjustments for the lines */
+.jstree-default .jstree-icon:empty {
+  width: 24px !important;
+  height: 24px !important;
+  line-height: 24px !important;
+}

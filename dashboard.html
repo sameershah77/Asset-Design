@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Asset Hierarchy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- jsTree CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+  <link rel="stylesheet" href="css/tree.css"/>
+  <link rel="stylesheet" href="css/tree-additions.css"/>
+  <link rel="stylesheet" href="css/tree-lines.css"/>
+  <link rel="stylesheet" href="css/tree-context-menu.css"/>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/notifications.css">
+  
+  <!-- SignalR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+  <script src="js/notifications.js"></script>
+
+  
+
+  <style>
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: var(--surface);
+      color: var(--on-surface);
+      border: 1px solid rgba(128,128,128,0.15);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+    }
+    
+    .loading {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+    
+    .error {
+      padding: 20px;
+      text-align: center;
+      color: var(--danger);
+      background-color: rgba(244, 67, 54, 0.1);
+      border-radius: var(--radius-md);
+    }
+    .theme-toggle:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+  
+  <script>
+    // Check if user is logged in and wire theme toggle
+    document.addEventListener('DOMContentLoaded', function() {
+      const token = localStorage.getItem('accessToken');
+      const userDataStr = localStorage.getItem('userData');
+      
+      if (!token || !userDataStr) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      try {
+        const userData = JSON.parse(userDataStr);
+        
+        // Update user information throughout the page
+        const displayNameEl = document.getElementById('userDisplayName');
+        const welcomeNameEl = document.getElementById('welcomeUserName');
+        const emailEl = document.getElementById('userEmail');
+        const roleEl = document.getElementById('userRole');
+        if (displayNameEl) displayNameEl.textContent = userData.name || 'User';
+        if (welcomeNameEl) welcomeNameEl.textContent = userData.name || 'User';
+        if (emailEl) emailEl.textContent = userData.email || 'email@example.com';
+        if (roleEl) roleEl.textContent = userData.role || 'User';
+        
+        // Update user initials in avatar
+        if (userData.name) {
+          const initials = userData.name.split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+          const initialsEl = document.getElementById('userInitials');
+          if (initialsEl) initialsEl.textContent = initials;
+        }
+      } catch (e) {
+        console.error('Error loading user data:', e);
+      }
+      
+      // Theme toggle functionality
+      const themeToggle = document.getElementById('themeToggle');
+      if (themeToggle) {
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          themeToggle.textContent = 'Toggle Light Mode';
+        }
+        
+        themeToggle.addEventListener('click', () => {
+          const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+          
+          if (isDarkMode) {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            themeToggle.textContent = 'Toggle Dark Mode';
+          } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            themeToggle.textContent = 'Toggle Light Mode';
+          }
+        });
+      }
+    });
+  </script>
+</head>
+<body>
+  
+  
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo-mark">MS</div>
+        <div class="brand-title">Asset Hierarchy</div>
+      </div>
+      
+      <nav class="main-nav">
+        <ul>
+          <li class="nav-item active" data-section="tree-section">
+            <a href="#tree-view">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span class="nav-label">Tree View</span>
+            </a>
+          </li>
+          <li class="nav-item" data-section="deleted-section">
+            <a href="#deleted">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              <span class="nav-label">Recently Deleted</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="user-section">
+        <div class="user-info">
+          <div class="user-avatar" id="userInitials">JS</div>
+          <div class="user-meta">
+            <div class="user-name" id="userDisplayName">John Smith</div>
+            <div class="user-email" id="userEmail">john@example.com</div>
+          </div>
+        </div>
+        <div class="user-role" id="userRole">User</div>
+        <button id="logout-btn" class="btn-logout">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Logout
+        </button>
+      </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="top-bar">
+        <h1 id="section-title">Dashboard</h1>
+        <div class="actions">
+          <button class="theme-toggle" id="themeToggle">Toggle Dark Mode</button>
+        </div>
+      </header>
+      
+      <!-- Tree View Section - Active by default -->
+      <div id="tree-section" class="content-section active">
+        <div class="content-container">
+          <div class="card">
+            <div class="card-header">
+              <h3>Welcome, <span id="welcomeUserName">User</span>!</h3>
+              <p>Asset Tree Structure</p>
+            </div>
+            <div class="tree-stats-layout">
+              <div class="tree-panel">
+                <div id="assetTree" class="mt-4"></div>
+              </div>
+              <div class="stats-panel">
+                <div class="stat-card">
+                  <div class="stat-value" id="totalAssets">-</div>
+                  <div class="stat-label">Total Assets</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value" id="largestBranch">-</div>
+                  <div class="stat-label">Largest Branch</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value" id="maxDepth">-</div>
+                  <div class="stat-label">Maximum Depth</div>
+                </div>
+                <!-- Total Combinations box -->
+                <div class="stat-card" style="position:relative;">
+                  <div class="stat-value" id="totalCombinations">-</div>
+                  <div class="stat-label">Total Combinations</div>
+                  <button id="refreshCombinationsBtn" 
+                          title="Refresh and enqueue all combinations" 
+                          style="position:absolute; top:12px; right:12px; padding:6px 10px; border-radius:6px; background:var(--primary); color:#fff; border:none; cursor:pointer; font-size:0.85rem;">
+                    ↻
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deleted Items Section -->
+      <div id="deleted-section" class="content-section">
+        <div class="content-container">
+          <div class="card">
+            <div class="card-header">
+              <h3>Recently Deleted Assets</h3>
+              <p>Each deleted asset is shown as a card with its child tree (read-only)</p>
+            </div>
+            <div id="deletedCards" class="deleted-cards-grid">
+              <!-- Cards will be injected here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- jQuery + jsTree -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+  <script src="js/asset-hierarchy-api.js"></script>
+  
+  <script>
+    // Asset data will be fetched from API
+    // Notification function
+    function showNotification(message, type = 'info') {
+      const notif = document.createElement('div');
+      notif.className = `api-notification ${type}`;
+      notif.textContent = message;
+      document.body.appendChild(notif);
+      
+      // Remove notification after animation completes
+      setTimeout(() => {
+        notif.remove();
+      }, 3000);
+    }
+    
+    // Calculate tree statistics
+    function calculateTreeStats(node) {
+      let stats = {
+        totalAssets: 0,
+        largestBranch: { name: '', count: 0 },
+        maxDepth: 0
+      };
+
+      function countNodes(node, depth = 1) {
+        if (!node) return 0;
+        
+        // Count current node
+        stats.totalAssets++;
+        
+        // Update max depth
+        stats.maxDepth = Math.max(stats.maxDepth, depth);
+        
+        // Count direct children
+        const childCount = Array.isArray(node.childrens) ? node.childrens.length : 0;
+        
+        // Update largest branch if this node has more children
+        if (childCount > stats.largestBranch.count) {
+          stats.largestBranch = {
+            name: node.name,
+            count: childCount
+          };
+        }
+        
+        // Recursively count children
+        if (childCount > 0) {
+          node.childrens.forEach(child => countNodes(child, depth + 1));
+        }
+      }
+      
+      countNodes(node);
+      return stats;
+    }
+
+    // Update statistics in the UI
+    function updateTreeStats(stats) {
+      document.getElementById('totalAssets').textContent = stats.totalAssets;
+      document.getElementById('largestBranch').textContent = `${stats.largestBranch.count}`;
+      document.getElementById('maxDepth').textContent = stats.maxDepth;
+      
+      // Update tooltips with more details
+      document.getElementById('largestBranch').parentElement.title = 
+        `Node "${stats.largestBranch.name}" has ${stats.largestBranch.count} direct children`;
+    }
+
+    // Convert nested Asset JSON (id,name,childrens) to jsTree flat data
+    // Adds a_attr with data-count for custom UI badges per node
+    function convertToJsTree(node, parentId = "#", level = 1) {
+      const nodes = [];
+      const backendId = String(node.id);
+      const name = node.name;
+      const childrenArr = Array.isArray(node.childrens) ? node.childrens : [];
+      const childCount = childrenArr.length;
+      
+      // Determine node type class based on children count or level
+      const nodeTypeClass = childCount > 0 ? 'asset-parent' : 'asset-leaf';
+      const levelClass = `asset-level-${level}`;
+
+      // Build a unique id per node based on its path to avoid collisions
+      const uid = parentId === '#' ? `n${backendId}` : `${parentId}_${backendId}`;
+
+      nodes.push({
+        id: uid,
+        parent: parentId,
+        text: name,
+        data: { backendId: Number(backendId) },
+        a_attr: { 
+          'data-count': String(childCount), 
+          'title': name,
+          'class': `${nodeTypeClass} ${levelClass}`
+        }
+      });
+
+      if (childCount) {
+        childrenArr.forEach(child => {
+          nodes.push(...convertToJsTree(child, uid, level + 1));
+        });
+      }
+
+      return nodes;
+    }
+
+    // Deleted assets functionality moved to asset-hierarchy-api.js
+
+    // Initialize Tree View (optionally restore state and selection)
+    async function initializeTreeView(options = {}) {
+      if ($('#assetTree').data('jstree')) {
+        $('#assetTree').jstree('destroy');
+      }
+      
+      try {
+        // Show loading indicator
+        $('#assetTree').html('<div class="loading">Loading asset data...</div>');
+        
+        // Fetch asset hierarchy from API
+        const assetData = await fetchAssetHierarchy();
+        
+        // Calculate tree statistics
+        const treeStats = calculateTreeStats(assetData);
+        updateTreeStats(treeStats);
+        
+        // Convert to jsTree format
+        const treeData = convertToJsTree(assetData);
+        showNotification('Asset hierarchy loaded successfully', 'success');
+        
+        // Ensure previous jsTree event handlers are cleared to avoid duplicates
+        $('#assetTree').off('.jstree');
+
+        // Bind ready handler to restore state/selection when the tree is initialized
+        $('#assetTree').on('ready.jstree', function() {
+          const inst = $('#assetTree').jstree(true);
+          if (options && options.restoreState) {
+            try { inst.set_state(options.restoreState); } catch (_) {}
+          }
+          if (options && options.selectNodeId) {
+            const id = String(options.selectNodeId);
+            try {
+              inst.deselect_all(true);
+              inst.select_node(id);
+              inst.open_node(id);
+            } catch (_) {}
+          }
+        });
+
+        $('#assetTree').jstree({
+          'core': {
+            'data': treeData,
+            'check_callback': true, // Allows create, rename, delete, drag-drop
+            'themes': {
+              'responsive': true,
+              'variant': 'large',
+              'stripes': false
+            }
+          },
+        'plugins': ["state", "wholerow", "dnd", "contextmenu"], // Added wholerow for better selection
+        'state': { 'key': 'assetTreeState' },
+        'contextmenu': {
+          'items': function(node) {
+            return {
+              "Create": {
+                "label": "Add Child",
+                "action": function(obj) {
+                  const newNode = $('#assetTree').jstree('create_node', node, { text: 'New Asset' }, "last", function(new_node) {
+                    $('#assetTree').jstree('edit', new_node, null, async function(updatedNode) {
+                      try {
+                        // Capture current tree state before backend call so we can restore it after reload
+                        const inst = $('#assetTree').jstree(true);
+                        const prevState = inst ? inst.get_state() : null;
+                        // Call backend API to insert node under clicked parent
+                        // Read backendId from node.data (not node.original.data)
+                        const parentBackendId = Number(node.data?.backendId ?? node.original?.data?.backendId ?? 0);
+                        console.log('Creating child under parent:', { nodeId: node.id, nodeText: node.text, parentBackendId, nodeData: node.data, originalData: node.original?.data });
+                        await createAssetNode(parentBackendId, updatedNode.text);
+                        showNotification(`Created new asset "${updatedNode.text}"`, 'success');
+                        // Reload the entire tree to reflect backend-assigned IDs/state
+                        await initializeTreeView({ restoreState: prevState, selectNodeId: node.id });
+                      } catch (error) {
+                        showNotification('Failed to create node: ' + error.message, 'error');
+                        $('#assetTree').jstree('delete_node', new_node);
+                      }
+                    });
+                  });
+                }
+              },
+              "Rename": {
+                "label": "Rename",
+                "action": function(obj) {
+                  const oldName = node.text;
+                  const parentId = node.parent;
+                  const idNum = Number(node.data?.backendId ?? node.original?.data?.backendId ?? 0);
+                  $('#assetTree').jstree('edit', node, null, async function(updatedNode) {
+                    try {
+                      // Log rename intent
+                      console.log('Renaming asset:', { id: idNum, parentId, oldName, newName: updatedNode.text });
+                      // Build UpdateAssetDto (no move, same parent)
+                      const inst = $('#assetTree').jstree(true);
+                      const parentNode = inst.get_node(parentId);
+                      const backendParentId = Number(parentId === '#' ? 0 : (parentNode?.data?.backendId ?? parentNode?.original?.data?.backendId ?? 0));
+                      const updateDto = {
+                        Id: idNum,
+                        OldParentId: backendParentId,
+                        NewParentId: backendParentId,
+                        OldName: oldName,
+                        NewName: updatedNode.text
+                      };
+                      // Call backend API to update node and log response
+                      const resp = await updateAssetNode(updateDto);
+                      console.log('Rename API response:', resp);
+                      showNotification(`Updated asset name to "${updatedNode.text}"`, 'success');
+                    } catch (error) {
+                      showNotification('Failed to update node: ' + error.message, 'error');
+                      // Revert to previous name
+                      $('#assetTree').jstree('rename_node', node, node.original.text);
+                    }
+                  });
+                }
+              },
+              "Delete": {
+                "label": "Delete",
+                "action": function(obj) {
+                  if(confirm("Are you sure you want to delete this node?")) {
+                    try {
+                      // Call backend API to delete node
+                      const backendId = Number(node.data?.backendId ?? node.original?.data?.backendId ?? 0);
+                      console.log('Deleting asset:', { nodeId: node.id, nodeText: node.text, backendId });
+                      deleteAssetNode(backendId).then(() => {
+                        $('#assetTree').jstree('delete_node', node);
+                        showNotification(`Asset "${node.text}" deleted successfully`, 'success');
+                      }).catch(error => {
+                        showNotification('Failed to delete node: ' + error.message, 'error');
+                      });
+                    } catch (error) {
+                      showNotification('Failed to delete node: ' + error.message, 'error');
+                    }
+                  }
+                }
+              }
+            };
+          }
+        }
+      });
+
+      let isRevertingMove = false;
+
+      $('#assetTree').off('move_node.jstree').on("move_node.jstree", async function(e, data) {
+        if (isRevertingMove) return; // Skip if we're reverting
+
+        try {
+          const inst = $('#assetTree').jstree(true);
+          const idNum = Number(data.node?.data?.backendId ?? data.node?.original?.data?.backendId ?? 0);
+          const oldParentNode = data.old_parent === '#' ? null : inst.get_node(data.old_parent);
+          const newParentNode = data.parent === '#' ? null : inst.get_node(data.parent);
+          const oldParentId = Number(data.old_parent === '#' ? 0 : (oldParentNode?.data?.backendId ?? oldParentNode?.original?.data?.backendId ?? 0));
+          const newParentId = Number(data.parent === '#' ? 0 : (newParentNode?.data?.backendId ?? newParentNode?.original?.data?.backendId ?? 0));
+          const oldName = data.node.original?.text || data.node.text;
+          const newName = data.node.text;
+
+          console.log('Moving asset:', { id: idNum, oldParentId, newParentId, oldName, newName });
+
+          const moveDto = { Id: idNum, OldParentId: oldParentId, NewParentId: newParentId, OldName: oldName, NewName: newName };
+
+          const resp = await updateAssetNode(moveDto);
+          console.log('Move API response:', resp);
+          showNotification(`Moved asset "${data.node.text}" to new location`, 'success');
+        } catch (error) {
+          showNotification('Failed to move node: ' + error.message, 'error');
+          // Prevent recursion
+          isRevertingMove = true;
+          $('#assetTree').jstree('move_node', data.node, data.old_parent);
+          isRevertingMove = false;
+        }
+      });
+
+
+      // Optional: handle node selection
+      $('#assetTree').off('select_node.jstree').on("select_node.jstree", function (e, data) {
+        console.log("Selected node:", data.node.text);
+      });
+      
+    } catch (error) {
+      console.error("Failed to initialize tree view:", error);
+      $('#assetTree').html('<div class="error">Failed to load asset data. Please try refreshing.</div>');
+    }
+  }
+
+    // Display user info from localStorage
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check for stored user data first
+      const userDataStr = localStorage.getItem('userData');
+      if (userDataStr) {
+        try {
+          const userData = JSON.parse(userDataStr);
+          
+          // Update all user information elements
+          if (userData.name) {
+            // Update welcome message
+            document.getElementById('welcomeUserName').textContent = userData.name;
+            
+            // Update sidebar user info
+            document.getElementById('userDisplayName').textContent = userData.name;
+            
+            // Update user initials (avatar)
+            const initials = userData.name.split(' ')
+              .map(n => n[0])
+              .join('')
+              .toUpperCase()
+              .substring(0, 2);
+            document.getElementById('userInitials').textContent = initials;
+          }
+          
+          if (userData.email) {
+            document.getElementById('userEmail').textContent = userData.email;
+          }
+          
+          if (userData.role) {
+            document.getElementById('userRole').textContent = userData.role;
+          }
+          
+          // Removed lastLogin UI update (tree-only dashboard)
+          
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+        }
+      }
+      // Fallback to JWT if userData is not available
+      else {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+          try {
+            // Extract user info from JWT if possible (simple parsing, not validation)
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload && payload.name) {
+              document.getElementById('welcomeUserName').textContent = payload.name;
+            }
+          } catch (e) {
+            console.log('Could not parse JWT token');
+          }
+        }
+      }
+
+      // Theme toggle handled in head script
+      
+      // Logout handled below with confirmation
+      
+      // Section Navigation
+      const navItems = document.querySelectorAll('.nav-item');
+      const sections = document.querySelectorAll('.content-section');
+      const sectionTitle = document.getElementById('section-title');
+      
+      // Function to show a specific section
+      function showSection(sectionId) {
+        // Hide all sections
+        sections.forEach(section => {
+          section.classList.remove('active');
+        });
+        
+        // Show the selected section
+        const activeSection = document.getElementById(sectionId);
+        if (activeSection) {
+          activeSection.classList.add('active');
+          
+          // Update section title
+          const title = sectionId.replace('-section', '').replace(/\b\w/g, l => l.toUpperCase());
+          sectionTitle.textContent = title;
+          
+          // Initialize tree view if it's the tree section
+          if (sectionId === 'tree-section') {
+            setTimeout(() => {
+              initializeTreeView().catch(error => {
+                console.error('Failed to initialize tree view:', error);
+                $('#assetTree').html('<div class="error">Failed to load asset data: ' + error.message + '</div>');
+              });
+            }, 100);
+          } else if (sectionId === 'deleted-section') {
+            setTimeout(() => {
+              initializeDeletedCards().catch(error => {
+                console.error('Failed to initialize deleted cards view:', error);
+                const container = document.getElementById('deletedCards');
+                if (container) {
+                  container.innerHTML = '<div class="error">Failed to load deleted assets: ' + (error?.message || 'Unknown error') + '</div>';
+                }
+              });
+            }, 100);
+          }
+        }
+        
+        // Update active navigation item
+        navItems.forEach(item => {
+          if (item.dataset.section === sectionId) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+      
+      // Set up click handlers for navigation items
+      navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const sectionId = item.dataset.section;
+          showSection(sectionId);
+          
+          // Update URL hash without page reload
+          history.pushState(null, null, '#' + sectionId.replace('-section', ''));
+        });
+      });
+      
+      // Handle URL hash on page load
+      function handleHashChange() {
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+          const sectionId = hash + '-section';
+          const section = document.getElementById(sectionId);
+          if (section) {
+            showSection(sectionId);
+          }
+        }
+      }
+      
+      // Listen for hash changes
+      window.addEventListener('hashchange', handleHashChange);
+      
+      // Check hash on initial page load
+      handleHashChange();
+      
+      // Initialize tree view on page load if tree-section is visible
+      if (document.querySelector('.content-section.active').id === 'tree-section') {
+        initializeTreeView().catch(error => {
+          console.error('Failed to initialize tree view:', error);
+          $('#assetTree').html('<div class="error">Failed to load asset data: ' + error.message + '</div>');
+        });
+      }
+      
+      // Removed settings form handlers (tree-only dashboard)
+      
+      // Sidebar logout button
+      document.getElementById('logout-btn').addEventListener('click', function() {
+        if (confirm('Are you sure you want to log out?')) {
+          // Clear user data and token
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('userData');
+          
+          // Redirect to login page
+          window.location.href = 'login.html';
+        }
+      });
+
+      // Load and display total combinations count
+      async function loadCombinationsCount() {
+        try {
+          const combinations = await getAllCombinations();
+          const totalEl = document.getElementById('totalCombinations');
+          if (totalEl) {
+            totalEl.textContent = combinations.length;
+          }
+          return combinations;
+        } catch (err) {
+          console.error('Failed to load combinations:', err);
+          const totalEl = document.getElementById('totalCombinations');
+          if (totalEl) totalEl.textContent = '-';
+        }
+      }
+
+      // Refresh combinations button handler
+      const refreshBtn = document.getElementById('refreshCombinationsBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+          const prevText = refreshBtn.textContent;
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = '...';
+          
+          try {
+            // Fetch combinations and update count
+            const combinations = await getAllCombinations();
+            const totalEl = document.getElementById('totalCombinations');
+            if (totalEl) {
+              totalEl.textContent = combinations.length;
+            }
+            
+            // Enqueue "Count" column
+            await enqueueColumn('Count');
+            showNotification('Successfully enqueued "Count" column', 'success');
+          } catch (err) {
+            const raw = err?.message || 'Failed to refresh combinations';
+            const clean = raw.replace(/^\"|\"$/g, '').replace(/^"|"$/g, '');
+            showNotification(clean, 'error');
+          } finally {
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = prevText;
+          }
+        });
+      }
+
+      // Load combinations count on page load
+      loadCombinationsCount();
+    });
+  </script>
+</body>
+</html>

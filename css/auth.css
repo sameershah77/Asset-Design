@@ -1,0 +1,82 @@
+:root{
+  /* Light Theme Colors */
+  --bg: #f0f7ff; /* light blue background */
+  --surface: #ffffff; /* card surface */
+  --surface-2: #f5f9ff;
+  --on-surface: #2c3e50; /* dark text */
+  --muted: #7f8c9a;
+  --primary: #2196f3; /* material blue */
+  --primary-700: #1976d2;
+  --error: #ef5350;
+  --radius: 12px;
+  --elevation-1: 0 6px 18px rgba(0,0,0,0.08);
+  --brand-gradient: linear-gradient(135deg, #42a5f5, #0d47a1);
+}
+
+/* Dark Theme Colors */
+html[data-theme="dark"]{
+  --bg: #0a1929; /* dark blue background */
+  --surface: #0d2138; /* card surface */
+  --surface-2: #091625;
+  --on-surface: #e6eef8; /* light text */
+  --muted: #93a6c8;
+  --primary: #64b5f6; /* lighter blue for dark mode */
+  --primary-700: #1976d2;
+  --error: #ef5350;
+  --elevation-1: 0 6px 18px rgba(0,0,0,0.6);
+  --brand-gradient: linear-gradient(135deg, #5c6bc0, #1a237e);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--bg),var(--surface-2) 120%);color:var(--on-surface);display:flex;align-items:center;justify-content:center;padding:2rem;transition:all 0.3s ease}
+
+.auth-page{width:100%;max-width:980px}
+.card{background:linear-gradient(180deg,var(--surface),var(--surface-2));padding:1.8rem;border-radius:16px;box-shadow:var(--elevation-1);max-width:520px;margin:0 auto;border:1px solid rgba(255,255,255,0.08);transition:transform 0.3s ease, box-shadow 0.3s ease}
+.card:hover{transform:translateY(-5px);box-shadow:0 12px 28px rgba(0,0,0,0.15)}
+
+.brand{display:flex;align-items:center;gap:.75rem;margin-bottom:12px}
+.logo-mark{width:42px;height:42px;border-radius:10px;background:var(--brand-gradient);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.1rem;box-shadow:0 6px 18px rgba(33,150,243,0.3);transition:transform 0.3s ease, box-shadow 0.3s ease}
+.logo-mark:hover{transform:scale(1.05);box-shadow:0 8px 24px rgba(33,150,243,0.4)}
+.brand-title{font-weight:700;font-size:1.1rem}
+
+h1{margin:0 0 .3rem;font-size:1.6rem;color:var(--on-surface);font-weight:700}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+.field{margin-bottom:1.2rem}
+label{display:block;margin-bottom:.4rem;font-weight:600;color:var(--on-surface);opacity:.92;font-size:0.95rem}
+input, select{width:100%;padding:.85rem 1rem;border-radius:12px;border:1px solid rgba(128,128,128,0.15);font-size:1rem;background:transparent;color:var(--on-surface);box-shadow:inset 0 1px 2px rgba(0,0,0,0.05);transition:all 0.2s ease}
+input:focus, select:focus{outline:none;border-color:var(--primary);box-shadow:0 6px 24px rgba(33,150,243,0.15)}
+.pw-row{display:flex;gap:.5rem}
+.link-btn{background:transparent;border:none;color:var(--primary);cursor:pointer;padding:.4rem .6rem;border-radius:8px}
+.btn{background:var(--brand-gradient);color:#fff;padding:.8rem 1.2rem;border-radius:12px;border:none;cursor:pointer;font-weight:700;box-shadow:0 10px 30px rgba(25,118,210,0.25);transition:transform 0.3s ease, box-shadow 0.3s ease}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(25,118,210,0.35)}
+.btn.secondary{background:transparent;color:var(--on-surface);border:1px solid rgba(255,255,255,0.1);box-shadow:none}
+.actions{display:flex;align-items:center;gap:1rem;justify-content:space-between;margin-top:.6rem}
+.link{color:var(--primary);text-decoration:none}
+.status{margin-top:.6rem;color:var(--muted)}
+.error{color:var(--error);font-size:.95rem;margin-top:.35rem}
+
+/* Floating small helper under password */
+.pw-help{color:var(--muted);font-size:.9rem;margin-top:.25rem}
+
+/* Toast */
+.toast{position:fixed;right:20px;top:20px;padding:10px 14px;background:linear-gradient(180deg,var(--surface),var(--surface-2));color:var(--on-surface);border-radius:10px;box-shadow:0 10px 40px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03);z-index:9999;opacity:0;transition:opacity .35s}
+
+/* toast visible state */
+.toast.show{opacity:1}
+
+/* simple button ripple */
+.btn{position:relative;overflow:hidden}
+.btn:after{content:"";position:absolute;left:50%;top:50%;width:0;height:0;border-radius:50%;background:rgba(255,255,255,0.18);transform:translate(-50%,-50%);opacity:0;transition:width .45s ease, height .45s ease, opacity .45s}
+.btn:active:after{width:260px;height:260px;opacity:1;transition:width 0s, height 0s, opacity .45s}
+
+/* elevated input label when focused */
+input:focus + .field-label{transform:translateY(-6px);font-size:.85rem}
+
+
+@media (max-width:520px){
+  .card{padding:1rem}
+  .actions{flex-direction:column;align-items:stretch}
+}
+

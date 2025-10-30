@@ -1,0 +1,73 @@
+/* modern-tree.css */
+
+/* General body styling */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    margin: 0;
+    padding: 40px;
+}
+
+/* Tree container card */
+#assetTree {
+    max-width: 700px;
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    margin: auto;
+    transition: box-shadow 0.3s ease;
+}
+
+#assetTree:hover {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* jsTree nodes */
+#assetTree .jstree-node {
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+/* Node hover */
+#assetTree .jstree-node:hover {
+    background-color: #e0f0ff;
+}
+
+/* Selected node */
+#assetTree .jstree-clicked {
+    background-color: #2196f3 !important;
+    color: #fff !important;
+}
+
+/* Drag & Drop indicator */
+#assetTree .jstree-marker {
+    background-color: #2196f3 !important;
+}
+
+/* Context menu styling (optional) */
+.jstree-contextmenu {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    font-size: 14px;
+    color: #333;
+}
+
+.jstree-contextmenu li:hover {
+    background-color: #f0f4f8;
+    cursor: pointer;
+}
+
+#assetTree .jstree-icon {
+    color: #2196f3;
+}
+
+#assetTree .jstree-ocl {
+    width: 14px !important;
+    height: 14px !important;
+    margin-right: 6px;
+}

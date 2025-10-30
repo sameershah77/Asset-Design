@@ -1,0 +1,75 @@
+/* Theme-aware context menu styling with solid colors */
+:root {
+    --context-menu-bg: #ffffff;
+    --context-menu-text: #000000;
+    --context-menu-hover-bg: #f0f0f0;
+    --context-menu-border: #e0e0e0;
+    --context-menu-shadow: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] {
+    --context-menu-bg: #0b1430;
+    --context-menu-text: #ffffff;
+    --context-menu-hover-bg: #1c3177;
+    --context-menu-border: #2a83c3;
+    --context-menu-shadow: rgba(0, 0, 0, 0.5);
+}
+
+.vakata-context {
+    background: var(--context-menu-bg) !important;
+    border: 1px solid var(--context-menu-border) !important;
+    box-shadow: 0 10px 24px var(--context-menu-shadow) !important;
+    border-radius: 8px;
+    padding: 6px 0;
+    min-width: 190px;
+    backdrop-filter: saturate(120%) blur(4px);
+    -webkit-backdrop-filter: saturate(120%) blur(4px);
+    z-index: 9999 !important;
+}
+
+.vakata-context li > a {
+    color: var(--context-menu-text) !important;
+    padding: 10px 14px;
+    line-height: 1.5;
+    border: none !important;
+    text-shadow: none !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vakata-context li > a:hover {
+    background-color: var(--context-menu-hover-bg) !important;
+    box-shadow: none;
+    border: none !important;
+}
+
+/* Remove default styling */
+.vakata-context li > a i {
+    display: none; /* Hide default icons */
+}
+
+.vakata-context li > a span {
+    margin-left: 0;
+    padding: 0;
+}
+
+/* Separator styling */
+.vakata-context .vakata-context-separator {
+    margin: 6px 0;
+    border-top: 1px solid var(--context-menu-border) !important;
+}
+
+/* Active/pressed feedback */
+.vakata-context li > a:active {
+    transform: translateY(1px);
+}
+
+/* Disabled items */
+.vakata-context .vakata-contextmenu-disabled > a,
+.vakata-context .vakata-contextmenu-disabled > a:hover {
+    opacity: 0.5;
+    background: transparent !important;
+    cursor: not-allowed;
+}
