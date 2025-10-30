@@ -301,11 +301,22 @@
 
     // Convert nested Asset JSON (id,name,childrens) to jsTree flat data
     // Adds a_attr with data-count for custom UI badges per node
+    // Now computes total descendant count (all levels) and displays it
     function convertToJsTree(node, parentId = "#", level = 1) {
       const nodes = [];
       const backendId = String(node.id);
       const name = node.name;
       const childrenArr = Array.isArray(node.childrens) ? node.childrens : [];
+
+      // Recursively compute total descendant count (children + grandchildren ...)
+      function getDescCount(n) {
+        const ch = Array.isArray(n.childrens) ? n.childrens : [];
+        let c = ch.length;
+        for (const cc of ch) c += getDescCount(cc);
+        return c;
+      }
+
+      const totalDesc = getDescCount(node);
       const childCount = childrenArr.length;
       
       // Determine node type class based on children count or level
@@ -315,13 +326,16 @@
       // Build a unique id per node based on its path to avoid collisions
       const uid = parentId === '#' ? `n${backendId}` : `${parentId}_${backendId}`;
 
+      const displayText = totalDesc > 0 ? `${name} (${totalDesc})` : name;
+
       nodes.push({
         id: uid,
         parent: parentId,
-        text: name,
+        text: displayText,
         data: { backendId: Number(backendId) },
         a_attr: { 
-          'data-count': String(childCount), 
+          // data-count now holds total descendant count
+          'data-count': String(totalDesc), 
           'title': name,
           'class': `${nodeTypeClass} ${levelClass}`
         }

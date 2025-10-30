@@ -302,22 +302,32 @@ async function calculateAverage(columnName) {
 function assetToNodes(asset, parentId = '#') {
     const nodes = [];
     
+    // Helper: compute total number of descendant nodes (all levels) for display
+    function getDescendantCount(a) {
+        const children = Array.isArray(a.Childrens) ? a.Childrens : (Array.isArray(a.childrens) ? a.childrens : []);
+        let cnt = children.length;
+        for (const c of children) cnt += getDescendantCount(c);
+        return cnt;
+    }
+
     // Handle both DeletionAsset and Asset types
     const nodeId = `d${asset.AssetId || asset.Id}`;
     const nodeName = asset.Name || asset.name;
     
-    // Create node
+    // Create node and append total descendant count (if any)
+    const descCount = getDescendantCount(asset);
+    const idPart = asset.AssetId || asset.Id;
+    const displayText = parentId === '#' 
+        ? `${nodeName}${descCount > 0 ? ` (${descCount})` : ''} (ID: ${idPart})` 
+        : `${nodeName}${descCount > 0 ? ` (${descCount})` : ''}`;
+
     nodes.push({
         id: nodeId,
         parent: parentId,
-        text: parentId === '#' ? 
-            `${nodeName} (ID: ${asset.AssetId || asset.Id})` : 
-            nodeName,
+        text: displayText,
         a_attr: {
             class: parentId === '#' ? 'deleted-asset-root' : 'deleted-asset-child',
-            title: asset.ParentIds ? 
-                `Parent IDs: ${asset.ParentIds.join(', ')}` : 
-                undefined
+            title: asset.ParentIds ? `Parent IDs: ${asset.ParentIds.join(', ')}` : undefined
         },
         type: 'deleted'
     });
@@ -429,7 +439,17 @@ async function initializeDeletedCards() {
             const name = asset.Name ?? asset.name ?? 'Unnamed';
             const childrenArr = Array.isArray(asset.Childrens) ? asset.Childrens : (Array.isArray(asset.childrens) ? asset.childrens : []);
 
-            nodes.push({ id, parent: parentId, text: name, a_attr: { title: name } });
+            // compute total descendant count (all levels)
+            function getDescCount(a) {
+                const ch = Array.isArray(a.Childrens) ? a.Childrens : (Array.isArray(a.childrens) ? a.childrens : []);
+                let c = ch.length;
+                for (const cc of ch) c += getDescCount(cc);
+                return c;
+            }
+            const totalDesc = getDescCount(asset);
+            const display = totalDesc > 0 ? `${name} (${totalDesc})` : name;
+
+            nodes.push({ id, parent: parentId, text: display, a_attr: { title: name } });
 
             childrenArr.forEach(child => {
                 nodes.push(...toJsTreeFromAsset(child, id));
@@ -525,8 +545,12 @@ async function initializeDeletedCards() {
                 el.textContent = 'Retrieving...';
                 try {
                     const result = await retrieveDeletedAssetById(id);
+                    // Explicitly handle server 204 No Content sentinel
+                    if (result && result.__noContent) {
+                        showNotification('No content returned from server (204) — the asset may have already been retrieved or there is no additional data.', 'info');
+                    }
                     // If backend returns informational message about parents
-                    if (result && (result.Message || result.message)) {
+                    else if (result && (result.Message || result.message)) {
                         const msg = result.Message || result.message;
                         const parents = result.ParentIds || result.parentIds;
                         const note = result.Note || result.note;
@@ -583,8 +607,26 @@ async function retrieveDeletedAssetById(id) {
             },
             credentials: 'include'
         });
-        showToast(`RetrieveDeletedAsset response for ID ${id}: ${resp.status}, ${resp}`);
+        // Quick toast for immediate visibility
+        showToast(`RetrieveDeletedAsset response for ID ${id}: ${resp.status} ${resp.statusText}`);
+        // Log full response and headers for debugging (helps determine if server sent no content)
+        console.log(`RetrieveDeletedAsset response for ID ${id}:`, resp);
+        try {
+            for (const pair of resp.headers.entries()) {
+                console.log(`RetrieveDeletedAsset header: ${pair[0]}: ${pair[1]}`);
+            }
+        } catch (hdrErr) {
+            console.warn('Could not enumerate response headers', hdrErr);
+        }
+
         const contentType = (resp.headers.get('content-type') || '').toLowerCase();
+
+        // Handle explicit 204 No Content early: there is no body to parse.
+        if (resp.status === 204) {
+            console.info(`RetrieveDeletedAsset for ID ${id} returned 204 No Content`);
+            // Return an explicit shape so callers know this was a no-content success
+            return { __noContent: true };
+        }
         if (!resp.ok) {
             const errText = contentType.includes('application/json')
                 ? JSON.stringify(await resp.json()).slice(0, 300)
