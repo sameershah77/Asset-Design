@@ -213,14 +213,14 @@ async function fetchDeletedAssets() {
 }
 
 /**
- * Fetches all word combinations with counts
- * GET /AssetHierarchy/GetAllCombinations
- * @returns {Promise<Array<{id: number, word: string, count: number}>>}
+ * Fetches all combinations count
+ * GET /AssetHierarchy/GetAllCombinationsCountAsync
+ * @returns {Promise<number>} Count of combinations
  */
-async function getAllCombinations() {
+async function getAllCombinationsCount() {
     try {
         const token = localStorage.getItem('accessToken');
-        const resp = await fetch(`${API_BASE}/AssetHierarchy/GetAllCombinations`, {
+        const resp = await fetch(`${API_BASE}/AssetHierarchy/GetAllCombinationsCount`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -236,27 +236,33 @@ async function getAllCombinations() {
         }
 
         const data = await resp.json();
-        console.log("Combinations data retrieved:", data);
-        return Array.isArray(data) ? data : [];
+        console.log("Combinations count retrieved:", data);
+        
+        // Backend returns { totalCombinations: number }
+        if (data && typeof data.totalCombinations === 'number') {
+            return data.totalCombinations;
+        }
+        // Fallback: if direct number
+        return typeof data === 'number' ? data : 0;
     } catch (error) {
-        console.error('Error fetching combinations:', error);
+        console.error('Error fetching combinations count:', error);
         throw error;
     }
 }
 
 /**
- * Enqueues a column for average calculation (server-side queue)
- * POST /AssetHierarchy/enqueue with JSON string body
+ * Calculate average for a column
+ * POST /AssetHierarchy/CalculateAverage with JSON string body
  * @param {string} columnName
  * @returns {Promise<Object>} Response object (e.g., { message: string })
  */
-async function enqueueColumn(columnName) {
+async function calculateAverage(columnName) {
     try {
         if (typeof columnName !== 'string' || !columnName.trim()) {
             throw new Error('Column name is required');
         }
         const token = localStorage.getItem('accessToken');
-        const resp = await fetch(`${API_BASE}/AssetHierarchy/EnqueueColumn`, {
+        const resp = await fetch(`${API_BASE}/AssetHierarchy/CalculateAverage`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -282,7 +288,7 @@ async function enqueueColumn(columnName) {
         const text = await resp.text().catch(() => '');
         return text ? { message: text } : {};
     } catch (error) {
-        console.error('Error enqueuing column:', error);
+        console.error('Error calculating average:', error);
         throw error;
     }
 }

@@ -682,23 +682,39 @@
         }
       });
 
-      // Load and display total combinations count
+      // Load and display total combinations count continuously
+      let combinationsInterval = null;
+      
       async function loadCombinationsCount() {
         try {
-          const combinations = await getAllCombinations();
+          const count = await getAllCombinationsCount();
           const totalEl = document.getElementById('totalCombinations');
           if (totalEl) {
-            totalEl.textContent = combinations.length;
+            totalEl.textContent = count;
           }
-          return combinations;
+          return count;
         } catch (err) {
-          console.error('Failed to load combinations:', err);
+          console.error('Failed to load combinations count:', err);
           const totalEl = document.getElementById('totalCombinations');
           if (totalEl) totalEl.textContent = '-';
         }
       }
 
-      // Refresh combinations button handler
+      // Start polling combinations count every 2 seconds
+      function startCombinationsPolling() {
+        // Load immediately
+        loadCombinationsCount();
+        
+        // Then poll every 2 seconds
+        if (combinationsInterval) {
+          clearInterval(combinationsInterval);
+        }
+        combinationsInterval = setInterval(() => {
+          loadCombinationsCount();
+        }, 2000);
+      }
+
+      // Refresh combinations button handler - triggers average calculation
       const refreshBtn = document.getElementById('refreshCombinationsBtn');
       if (refreshBtn) {
         refreshBtn.addEventListener('click', async () => {
@@ -707,18 +723,11 @@
           refreshBtn.textContent = '...';
           
           try {
-            // Fetch combinations and update count
-            const combinations = await getAllCombinations();
-            const totalEl = document.getElementById('totalCombinations');
-            if (totalEl) {
-              totalEl.textContent = combinations.length;
-            }
-            
-            // Enqueue "Count" column
-            await enqueueColumn('Count');
-            showNotification('Successfully enqueued "Count" column', 'success');
+            // Call CalculateAverage API with "Count" parameter
+            await calculateAverage('Count');
+            showNotification('Average calculation started for "Count" column', 'success');
           } catch (err) {
-            const raw = err?.message || 'Failed to refresh combinations';
+            const raw = err?.message || 'Failed to calculate average';
             const clean = raw.replace(/^\"|\"$/g, '').replace(/^"|"$/g, '');
             showNotification(clean, 'error');
           } finally {
@@ -728,8 +737,8 @@
         });
       }
 
-      // Load combinations count on page load
-      loadCombinationsCount();
+      // Start polling combinations count on page load
+      startCombinationsPolling();
     });
   </script>
 </body>
