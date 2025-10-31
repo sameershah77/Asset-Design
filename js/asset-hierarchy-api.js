@@ -314,12 +314,14 @@ function assetToNodes(asset, parentId = '#') {
     const nodeId = `d${asset.AssetId || asset.Id}`;
     const nodeName = asset.Name || asset.name;
     
-    // Create node and append total descendant count (if any)
+    // Create node and append total descendant indicator (if any).
+    // Note: we keep empty parentheses where children exist but remove the numeric count.
     const descCount = getDescendantCount(asset);
     const idPart = asset.AssetId || asset.Id;
+    // Keep parentheses for nodes that have children, but remove the numeric count inside
     const displayText = parentId === '#' 
-        ? `${nodeName}${descCount > 0 ? ` (${descCount})` : ''} (ID: ${idPart})` 
-        : `${nodeName}${descCount > 0 ? ` (${descCount})` : ''}`;
+        ? `${nodeName}${descCount > 0 ? ' ()' : ''} (ID: ${idPart})` 
+        : `${nodeName}${descCount > 0 ? ' ()' : ''}`;
 
     nodes.push({
         id: nodeId,
@@ -447,7 +449,8 @@ async function initializeDeletedCards() {
                 return c;
             }
             const totalDesc = getDescCount(asset);
-            const display = totalDesc > 0 ? `${name} (${totalDesc})` : name;
+            // Show empty parentheses when descendants exist, but omit numeric counts
+            const display = totalDesc > 0 ? `${name} ()` : name;
 
             nodes.push({ id, parent: parentId, text: display, a_attr: { title: name } });
 

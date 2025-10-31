@@ -219,7 +219,7 @@
           <div class="card">
             <div class="card-header">
               <h3>Recently Deleted Assets</h3>
-              <p>Each deleted asset is shown as a card with its child tree (read-only)</p>
+              <p>Before retrieving deleted assets, please confirm the existence of the parent node.</p>
             </div>
             <div id="deletedCards" class="deleted-cards-grid">
               <!-- Cards will be injected here -->
@@ -395,7 +395,22 @@
         $('#assetTree').jstree({
           'core': {
             'data': treeData,
-            'check_callback': true, // Allows create, rename, delete, drag-drop
+            // Use a function to selectively allow operations. Disallow rename/move/delete for root nodes (parent === '#').
+            'check_callback': function(operation, node, node_parent, node_position, more) {
+              try {
+                // When attempting to rename/delete/move a node that is a root (parent === '#'), disallow.
+                const op = String(operation || '').toLowerCase();
+                // node may be a DOM node or jsTree node; handle both shapes
+                const nodeParent = node && node.parent !== undefined ? node.parent : (node_parent && node_parent.id ? node_parent.id : null);
+                if ((op === 'rename_node' || op === 'delete_node' || op === 'move_node') && nodeParent === '#') {
+                  return false;
+                }
+                // Allow other operations (create under root allowed)
+                return true;
+              } catch (e) {
+                return true;
+              }
+            },
             'themes': {
               'responsive': true,
               'variant': 'large',
@@ -404,9 +419,22 @@
           },
         'plugins': ["state", "wholerow", "dnd", "contextmenu"], // Added wholerow for better selection
         'state': { 'key': 'assetTreeState' },
+        // Prevent dragging of root nodes visually
+        'dnd': {
+          'is_draggable': function(nodes, event) {
+            const inst = $('#assetTree').jstree(true);
+            for (const n of nodes) {
+              const nodeObj = inst.get_node(n);
+              if (nodeObj && nodeObj.parent === '#') return false; // root nodes not draggable
+            }
+            return true;
+          }
+        },
         'contextmenu': {
           'items': function(node) {
-            return {
+            // If node is root (parent === '#'), do not expose update/rename/delete options
+            const isRoot = node.parent === '#';
+            const items = {
               "Create": {
                 "label": "Add Child",
                 "action": function(obj) {
@@ -486,6 +514,12 @@
                 }
               }
             };
+            // If root node, remove Rename and Delete options
+            if (isRoot) {
+              delete items.Rename;
+              delete items.Delete;
+            }
+            return items;
           }
         }
       });
@@ -494,6 +528,16 @@
 
       $('#assetTree').off('move_node.jstree').on("move_node.jstree", async function(e, data) {
         if (isRevertingMove) return; // Skip if we're reverting
+
+        // Prevent moving the root node (original parent was '#')
+        if (data && data.old_parent === '#') {
+          showNotification('Root node cannot be moved', 'warning');
+          isRevertingMove = true;
+          // Revert to previous parent
+          $('#assetTree').jstree('move_node', data.node, data.old_parent);
+          isRevertingMove = false;
+          return;
+        }
 
         try {
           const inst = $('#assetTree').jstree(true);

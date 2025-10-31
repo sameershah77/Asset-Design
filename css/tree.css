@@ -168,10 +168,10 @@ h2 {
 .jstree-default .jstree-icon.jstree-themeicon {
   background-color: rgba(33, 150, 243, 0.2); /* Light blue transparent */
   background-image: none !important;
-  border-radius: 50%;
-  width: 30px !important;
-  height: 30px !important;
-  line-height: 30px !important;
+  border-radius: 20%; /* Rectangular with slight rounding */
+  width: 100px !important; /* Increased width for wider rectangle */
+  height: 40px !important; /* Shorter height for rectangular look */
+  line-height: 40px !important; /* Match height for vertical centering */
   margin-right: 10px;
   transition: all 0.2s ease;
   box-shadow: none;
