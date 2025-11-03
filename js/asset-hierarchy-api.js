@@ -6,10 +6,19 @@ const API_BASE = 'https://localhost:7186/api';
  * Fetches the asset hierarchy tree structure from the API
  * @returns {Promise<Object>} The asset hierarchy tree structure
  */
-async function fetchAssetHierarchy() {
+async function fetchAssetsByParentId(parentId = null) {
     try {
         const token = localStorage.getItem('accessToken');
-        const response = await fetch(`${API_BASE}/AssetHierarchy/GetAssetHierarchy`, {
+        
+        // Build URL: if parentId is null, don't append anything; otherwise append /parentId
+        let url = `${API_BASE}/AssetHierarchy/GetByParentId`;
+        if (parentId !== null && parentId !== undefined) {
+            url += `/${parentId}`;
+        }
+        
+        console.log('Fetching from URL:', url);
+        
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -23,11 +32,204 @@ async function fetchAssetHierarchy() {
         }
         
         const data = await response.json();
-        console.log("Asset hierarchy data retrieved:", data);
+        console.log(`Assets retrieved for parent ID ${parentId}:`, data);
         return data;
     } catch (error) {
-        console.error("Error fetching asset hierarchy:", error);
+        console.error(`Error fetching assets for parent ID ${parentId}:`, error);
         throw error;
+    }
+}
+
+/**
+ * Initializes the tree with root node and sets up lazy loading of children
+ */
+async function initializeAssetHierarchy() {
+    if ($('#assetTree').data('jstree')) {
+        $('#assetTree').jstree('destroy');
+    }
+    
+    try {
+        // Show loading indicator
+                // Initialize jsTree with robust lazy loading via core.data function
+                $('#assetTree').jstree('destroy'); // ensure clean state before init
+                $('#assetTree').jstree({
+                    core: {
+                        // Use a function so jsTree will call it for root and child loads
+                        data: async function(obj, callback) {
+                            try {
+                                // Root call (obj.id === '#') -> fetch root assets
+                                if (obj.id === '#') {
+                                    const roots = await fetchAssetsByParentId();
+                                    const nodes = (Array.isArray(roots) ? roots : []).map(a => ({
+                                        id: `node_${a.id}`,
+                                        text: a.name,
+                                        children: true,
+                                        data: { assetId: a.id }
+                                    }));
+                                    callback.call(this, nodes);
+                                    return;
+                                }
+
+                                // For a non-root node, obj.id will be like 'node_6'
+                                const match = String(obj.id).match(/node_(\d+)/);
+                                const parentId = match ? Number(match[1]) : (obj.data?.assetId ?? null);
+                                if (parentId === null || parentId === undefined) {
+                                    callback.call(this, []);
+                                    return;
+                                }
+
+                                const children = await fetchAssetsByParentId(parentId);
+                                const nodes = (Array.isArray(children) ? children : []).map(c => ({
+                                    id: `node_${c.id}`,
+                                    text: c.name,
+                                    children: true,
+                                    data: { assetId: c.id }
+                                }));
+                                callback.call(this, nodes);
+                            } catch (err) {
+                                console.error('jsTree data loader error:', err);
+                                callback.call(this, []);
+                            }
+                        },
+                        themes: { responsive: true, variant: 'large', stripes: false },
+                        check_callback: true
+                    },
+                    types: { default: { icon: 'jstree-icon jstree-file' } },
+                plugins: ['state', 'wholerow', 'dnd', 'types', 'contextmenu'],
+                contextmenu: {
+                    items: function(node) {
+                        const tree = $('#assetTree').jstree(true);
+                        const isRoot = node.parent === '#';
+                        const items = {
+                            Create: {
+                                label: 'Add Child',
+                                action: function() {
+                                    const newNodeId = tree.create_node(node, { text: 'New Asset' }, 'last');
+                                    tree.edit(newNodeId, null, async function(updatedNode) {
+                                        try {
+                                            const parentBackendId = Number(node.data?.assetId ?? node.original?.data?.assetId ?? 0);
+                                            await createAssetNode(parentBackendId, updatedNode.text);
+                                            showNotification(`Created new asset "${updatedNode.text}"`, 'success');
+                                            // Refresh the node so server-assigned ids show up next time
+                                            try { tree.refresh_node(node); } catch(_) {}
+                                        } catch (err) {
+                                            showNotification('Failed to create node: ' + (err?.message || err), 'error');
+                                            try { tree.delete_node(newNodeId); } catch (_) {}
+                                        }
+                                    });
+                                }
+                            },
+                            Rename: {
+                                label: 'Rename',
+                                _disabled: isRoot,
+                                action: function() {
+                                    const oldName = node.text;
+                                    const idNum = Number(node.data?.assetId ?? node.original?.data?.assetId ?? 0);
+                                    tree.edit(node, null, async function(updatedNode) {
+                                        try {
+                                            const parentNode = tree.get_node(node.parent);
+                                            const backendParentId = Number(node.parent === '#' ? 0 : (parentNode?.data?.assetId ?? parentNode?.original?.data?.assetId ?? 0));
+                                            const updateDto = {
+                                                Id: idNum,
+                                                OldParentId: backendParentId,
+                                                NewParentId: backendParentId,
+                                                OldName: oldName,
+                                                NewName: updatedNode.text
+                                            };
+                                            await updateAssetNode(updateDto);
+                                            showNotification(`Updated asset name to "${updatedNode.text}"`, 'success');
+                                        } catch (err) {
+                                            showNotification('Failed to update node: ' + (err?.message || err), 'error');
+                                            try { tree.rename_node(node, oldName); } catch (_) {}
+                                        }
+                                    });
+                                }
+                            },
+                            Delete: {
+                                label: 'Delete',
+                                _disabled: isRoot,
+                                action: function() {
+                                    if (!confirm('Are you sure you want to delete this node?')) return;
+                                    const backendId = Number(node.data?.assetId ?? node.original?.data?.assetId ?? 0);
+                                    deleteAssetNode(backendId).then(() => {
+                                        try { tree.delete_node(node); } catch (_) {}
+                                        showNotification(`Asset "${node.text}" deleted successfully`, 'success');
+                                    }).catch(err => {
+                                        showNotification('Failed to delete node: ' + (err?.message || err), 'error');
+                                    });
+                                }
+                            }
+                        };
+                        return items;
+                    }
+                }
+                });
+
+                // Notify when tree is ready
+                $('#assetTree').on('ready.jstree', function() {
+                    console.log('jsTree ready');
+                    showNotification('Asset hierarchy loaded successfully', 'success');
+                });
+
+                // dblclick on node anchor -> open node (which triggers the core.data loader)
+                $('#assetTree').off('dblclick.asset');
+                $('#assetTree').on('dblclick.asset', 'li > a', function(e) {
+                    const $li = $(this).closest('li');
+                    if (!$li.length) return;
+                    const id = $li.attr('id');
+                    const tree = $('#assetTree').jstree(true);
+                    if (!tree) return;
+                    const node = tree.get_node(id);
+                    if (!node) return;
+
+                    if (!tree.is_open(node)) {
+                        tree.open_node(node);
+                    } else {
+                        tree.refresh_node(node);
+                    }
+                });
+
+                // Handle move (drag & drop)
+                let isRevertingMove = false;
+                $('#assetTree').off('move_node.jstree').on('move_node.jstree', async function(e, data) {
+                    if (isRevertingMove) return;
+                    const tree = $('#assetTree').jstree(true);
+                    // Prevent moving root nodes
+                    if (data && data.old_parent === '#') {
+                        showNotification('Root node cannot be moved', 'warning');
+                        isRevertingMove = true;
+                        try { tree.move_node(data.node, data.old_parent); } catch (_) {}
+                        isRevertingMove = false;
+                        return;
+                    }
+
+                    try {
+                        const movedNode = tree.get_node(data.node);
+                        const idNum = Number(movedNode?.data?.assetId ?? movedNode?.original?.data?.assetId ?? 0);
+                        const oldParentNode = data.old_parent === '#' ? null : tree.get_node(data.old_parent);
+                        const newParentNode = data.parent === '#' ? null : tree.get_node(data.parent);
+                        const oldParentId = Number(data.old_parent === '#' ? 0 : (oldParentNode?.data?.assetId ?? oldParentNode?.original?.data?.assetId ?? 0));
+                        const newParentId = Number(data.parent === '#' ? 0 : (newParentNode?.data?.assetId ?? newParentNode?.original?.data?.assetId ?? 0));
+                        const oldName = movedNode.original?.text || movedNode.text;
+                        const newName = movedNode.text;
+
+                        const moveDto = { Id: idNum, OldParentId: oldParentId, NewParentId: newParentId, OldName: oldName, NewName: newName };
+                        await updateAssetNode(moveDto);
+                        showNotification(`Moved asset "${movedNode.text}"`, 'success');
+                    } catch (err) {
+                        showNotification('Failed to move node: ' + (err?.message || err), 'error');
+                        isRevertingMove = true;
+                        try { $('#assetTree').jstree('move_node', data.node, data.old_parent); } catch (_) {}
+                        isRevertingMove = false;
+                    }
+                });
+
+        
+        
+    } catch (error) {
+        console.error("Failed to initialize asset hierarchy:", error);
+        $('#assetTree').html('<div class="error">Failed to load asset data: ' + error.message + '</div>');
+        showNotification('Failed to load asset hierarchy: ' + error.message, 'error');
     }
 }
 
